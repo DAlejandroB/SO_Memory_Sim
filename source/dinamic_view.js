@@ -53,8 +53,7 @@ function initMemSelector(pageType) {
         memSelector.disabled = true;
         addPartition();
       });
-      if(addPartDiv.childNodes.length == 1)
-        addPartDiv.appendChild(addPartBtn);
+      addPartDiv.appendChild(addPartBtn);
     } else if(pageType == "dynamic"){
       
     }
@@ -114,6 +113,7 @@ function initProcessDiv(processes) {
     prName.innerHTML = "Nombre Proceso: " + process.pName;
     prSize = document.createElement("h2");
     prSize.innerHTML = String(process.pSize) + " MB";
+    pSize = process.pSize;
     prTextDiv.appendChild(prId);
     prTextDiv.appendChild(prName);
     prTextDiv.appendChild(prSize);
@@ -132,33 +132,15 @@ function initProcessDiv(processes) {
       Subir programa a memoria, asignando la primera particion disponible 
       Empieza revisando la cantidad de particiones disponibles
       */
-      let usedPart = 0;
-      for (let i = 0; i < partitions.length; i++) {
-        if (partitions[i].isUsed) {
-          usedPart++;
-        }
-      }
-      if (usedPart >= nPartition) {
-        alert("No hay particiones disponibles, imposible cargar el programa");
-      }
       //Comprueba si el tamaño de memoria ha sido seleccionado, en ese caso realiza las funciones del boton
-      else if (memSize != 0) {
+      if (memSize != 0) {
+        //Desactiva la modificación del tamaño de memoria
         document.getElementById("mem-slider").disabled = true;
         document.getElementById("pr_btn" + pID).disabled = true;
         document.getElementById("pr_btn" + pID).style.backgroundColor = "#e67e22";
         document.getElementById("pr_btn" + pID).setAttribute("value", "Descargar");
 
-        // Recorre la lista de particiones buscando una disponible para el programa, en caso de no haber, informar al usuario.
-        let allocated = false, counter = 0;
-        while (!allocated && counter < partitions.length) {
-          if (!partitions[counter].isUsed && partitions[counter].size >= process.pSize) {
-            allocated = true;
-            partitions[counter].isUsed = true;
-            partitions[counter].process = process;
-            updatePartition();
-          }
-          counter++;
-        }
+        addPartition(process);
       } else {
         alert("El programa no ha sido subido, por favor seleccione un tamaño de memoria primero");
       }
@@ -238,3 +220,22 @@ function addPartition() {
     alert("El tamaño de partición es superior al tamaño de memoria disponible, imposible ingresar");
   }
 }
+
+function addPartition(process) {
+    let reservedMemSize = 0;
+    let size = process.pSize;
+    if (partitions.length > 0)
+      partitions.forEach(part => {
+        reservedMemSize += part.size;
+      });
+    let aviableMemory = memSize - reservedMemSize;
+    if (size <= aviableMemory) {
+      toAdd = new Partition(reservedMemSize, int(size));
+      toAdd.process = process;
+      partitions.push(toAdd);
+      nPartition++;
+      updatePartition();
+    } else {
+      alert("El tamaño de partición es superior al tamaño de memoria disponible, imposible ingresar");
+    }
+  }
